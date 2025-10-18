@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Custom color scheme - Light theme */
+    --background: 184 100% 99%;
+    --foreground: 178 100% 15%;
+    --card: 184 100% 99%;
+    --card-foreground: 178 100% 15%;
+    --popover: 184 100% 99%;
+    --popover-foreground: 178 100% 15%;
+    --primary: 182 100% 47%;
+    --primary-foreground: 184 100% 99%;
+    --secondary: 181 100% 88%;
+    --secondary-foreground: 178 100% 15%;
+    --muted: 181 100% 88%;
+    --muted-foreground: 180 70% 35%;
+    --accent: 180 100% 82%;
+    --accent-foreground: 178 100% 15%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 184 100% 99%;
+    --border: 181 100% 93%;
+    --input: 181 100% 93%;
+    --ring: 182 100% 47%;
+    --radius: 0.5rem;
+
+    /* Custom chart colors */
+    --chart-1: 182 100% 47%;
+    --chart-2: 180 100% 75%;
+    --chart-3: 178 100% 64%;
+    --chart-4: 176 100% 53%;
+    --chart-5: 174 100% 42%;
+  }
+
+  .dark {
+    /* Custom color scheme - Dark theme */
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 84% 4.9%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+
+    /* Custom chart colors - Dark theme */
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}

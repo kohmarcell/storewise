@@ -1,0 +1,755 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// Users & Authentication
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  name          String
+  phone         String?
+  photoUrl      String?  @map("photo_url")
+  roleId        String   @map("role_id")
+  outletId      String?  @map("outlet_id")
+  isActive      Boolean  @default(true) @map("is_active")
+  lastLoginAt   DateTime? @map("last_login_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  // Relations
+  role          Role      @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  outlet        Outlet?   @relation(fields: [outletId], references: [id], onDelete: SetNull)
+  sales         Sale[]
+  shifts        Shift[]
+  createdRoles  Role[]    @relation("RoleCreator")
+  adjustedStock StockAdjustment[] @relation("StockAdjuster")
+  approvedStock StockAdjustment[] @relation("StockApprover")
+  createdOpnames StockOpname[] @relation("OpnameCreator")
+  completedOpnames StockOpname[] @relation("OpnameCompleter")
+  createdTransfers StockTransfer[] @relation("TransferCreator")
+  approvedTransfers StockTransfer[] @relation("TransferApprover")
+  sentTransfers StockTransfer[] @relation("TransferSender")
+  receivedTransfers StockTransfer[] @relation("TransferReceiver")
+  orders        PurchaseOrder[] @relation("OrderCreator")
+  approvedOrders PurchaseOrder[] @relation("OrderApprover")
+  receivedGoods  GoodsReceipt[] @relation("GoodsReceiver")
+  madePayments  SupplierPayment[]
+  countedOpnames StockOpname[] @relation("OpnameCounter")
+
+  @@map("users")
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  permissions String   // JSON string instead of array
+  isSystem    Boolean  @default(false) @map("is_system")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdBy   String?  @map("created_by")
+
+  // Relations
+  users       User[]
+  creator     User?    @relation("RoleCreator", fields: [createdBy], references: [id])
+
+  @@map("roles")
+}
+
+// Outlets
+model Outlet {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  name      String
+  address   String?
+  phone     String?
+  email     String?
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  // Relations
+  users     User[]
+  sales     Sale[]
+  shifts    Shift[]
+  productStocks ProductStock[]
+  movements StockMovement[]
+  adjustments StockAdjustment[]
+  opnames   StockOpname[]
+  transfersFrom StockTransfer[] @relation("TransferFrom")
+  transfersTo StockTransfer[] @relation("TransferTo")
+  purchaseOrders PurchaseOrder[]
+  goodsReceipts GoodsReceipt[]
+
+  @@map("outlets")
+}
+
+// Products
+model Product {
+  id             String   @id @default(uuid())
+  sku            String   @unique
+  name           String
+  slug           String?
+  description    String?
+  categoryId     String   @map("category_id")
+  brand          String?
+  uomId          String   @map("uom_id")
+  costPrice      Float    @map("cost_price")
+  sellPrice      Float    @map("sell_price")
+  stockQty       Int      @default(0) @map("stock_qty")
+  minQty         Int      @map("min_qty")
+  maxQty         Int?     @map("max_qty")
+  reorderPoint   Int?     @map("reorder_point")
+  reorderQty     Int?     @map("reorder_qty")
+  tags           String   // JSON string instead of array
+  specifications String   @default("{}") // JSON string
+  isActive       Boolean  @default(true) @map("is_active")
+  isVariant      Boolean  @default(false) @map("is_variant")
+  parentProductId String? @map("parent_product_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  // Relations
+  category        Category           @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  uom             UnitOfMeasure      @relation(fields: [uomId], references: [id], onDelete: Restrict)
+  images          ProductImage[]
+  barcodes        ProductBarcode[]
+  variants        Product[]          @relation("ProductVariants")
+  parentVariant   Product?           @relation("ProductVariants", fields: [parentProductId], references: [id])
+  productStocks   ProductStock[]
+  movements       StockMovement[]
+  batches         Batch[]
+  adjustmentItems StockAdjustmentItem[]
+  opnameItems     StockOpnameItem[]
+  transferItems   StockTransferItem[]
+  saleItems       SaleItem[]
+  orderItems      PurchaseOrderItem[]
+  receiptItems    GoodsReceiptItem[]
+
+  @@map("products")
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  parentId    String?  @map("parent_id")
+  name        String
+  slug        String   @unique
+  description String?
+  imageUrl    String?  @map("image_url")
+  sortOrder   Int      @default(0) @map("sort_order")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Relations
+  parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children  Category[] @relation("CategoryHierarchy")
+  products  Product[]
+
+  @@map("categories")
+}
+
+model ProductImage {
+  id           String   @id @default(uuid())
+  productId    String   @map("product_id")
+  imageUrl     String   @map("image_url")
+  thumbnailUrl String?  @map("thumbnail_url")
+  sortOrder    Int      @default(0) @map("sort_order")
+  isPrimary    Boolean  @default(false) @map("is_primary")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_images")
+}
+
+model ProductBarcode {
+  id          String   @id @default(uuid())
+  productId   String   @map("product_id")
+  barcode     String
+  barcodeType String   @map("barcode_type") @default("CODE128")
+  isPrimary   Boolean  @default(false) @map("is_primary")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, barcode])
+  @@map("product_barcodes")
+}
+
+model UnitOfMeasure {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  abbreviation String
+  type        String   @default("QUANTITY")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Relations
+  products    Product[]
+  productStocks ProductStock[]
+  saleItems   SaleItem[]
+  orderItems  PurchaseOrderItem[]
+
+  @@map("unit_of_measures")
+}
+
+// Product Stock per Outlet
+model ProductStock {
+  id        String   @id @default(uuid())
+  productId String   @map("product_id")
+  outletId  String   @map("outlet_id")
+  uomId     String?  @map("uom_id")
+  quantity  Int      @default(0)
+  minQty    Int      @map("min_qty")
+  maxQty    Int?     @map("max_qty")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  outlet  Outlet  @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  uom     UnitOfMeasure? @relation(fields: [uomId], references: [id])
+
+  @@unique([productId, outletId])
+  @@map("product_stocks")
+}
+
+// Sales & POS
+model Sale {
+  id              String    @id @default(uuid())
+  invoiceNumber   String    @unique @map("invoice_number")
+  outletId        String    @map("outlet_id")
+  cashierId       String    @map("cashier_id")
+  customerId      String?   @map("customer_id")
+  shiftId         String    @map("shift_id")
+  subtotal        Float
+  discountAmount  Float     @default(0) @map("discount_amount")
+  discountPercent Float     @default(0) @map("discount_percent")
+  taxAmount       Float     @default(0) @map("tax_amount")
+  grandTotal      Float     @map("grand_total")
+  paidAmount      Float     @map("paid_amount")
+  changeAmount    Float     @map("change_amount")
+  paymentMethod   String    @map("payment_method") @default("CASH")
+  status          String    @default("HOLD")
+  syncStatus      String    @default("PENDING") @map("sync_status")
+  notes           String?
+  voidedAt        DateTime? @map("voided_at")
+  voidedBy        String?   @map("voided_by")
+  voidReason      String?   @map("void_reason")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  // Relations
+  outlet   Outlet   @relation(fields: [outletId], references: [id])
+  cashier  User     @relation(fields: [cashierId], references: [id])
+  customer Customer? @relation(fields: [customerId], references: [id])
+  shift    Shift    @relation(fields: [shiftId], references: [id])
+  items    SaleItem[]
+  payments SalePayment[]
+
+  @@map("sales")
+}
+
+model SaleItem {
+  id             String   @id @default(uuid())
+  saleId         String   @map("sale_id")
+  productId      String   @map("product_id")
+  batchId        String?  @map("batch_id")
+  qty            Int
+  uomId          String   @map("uom_id")
+  price          Float
+  discountAmount Float    @default(0) @map("discount_amount")
+  discountPercent Float    @default(0) @map("discount_percent")
+  subtotal       Float
+  costPrice      Float    @map("cost_price")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  sale    Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+  batch   Batch?  @relation(fields: [batchId], references: [id])
+  uom     UnitOfMeasure @relation(fields: [uomId], references: [id])
+
+  @@map("sale_items")
+}
+
+model SalePayment {
+  id           String   @id @default(uuid())
+  saleId       String   @map("sale_id")
+  paymentMethod String  @map("payment_method")
+  amount       Float
+  referenceNo  String?  @map("reference_no")
+  cardType     String?  @map("card_type")
+  cardLastFour String?  @map("card_last_four")
+  approvalCode String?  @map("approval_code")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  sale Sale @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  @@map("sale_payments")
+}
+
+model Shift {
+  id           String    @id @default(uuid())
+  shiftNo      String    @unique @map("shift_no")
+  outletId     String    @map("outlet_id")
+  cashierId    String    @map("cashier_id")
+  openedAt     DateTime  @map("opened_at")
+  closedAt     DateTime? @map("closed_at")
+  openingCash  Float     @map("opening_cash")
+  closingCash  Float?    @map("closing_cash")
+  expectedCash Float?    @map("expected_cash")
+  variance     Float?
+  totalSales   Float     @default(0) @map("total_sales")
+  totalTransactions Int    @default(0) @map("total_transactions")
+  status       String    @default("OPEN")
+  notes        String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  outlet  Outlet @relation(fields: [outletId], references: [id])
+  cashier User   @relation(fields: [cashierId], references: [id])
+  sales   Sale[]
+
+  @@map("shifts")
+}
+
+// Customers
+model Customer {
+  id                 String   @id @default(uuid())
+  code               String   @unique
+  name               String
+  phone              String
+  email              String?
+  address            String?
+  city               String?
+  postalCode         String?  @map("postal_code")
+  birthday           String?
+  gender             String?
+  tierId             String?  @map("tier_id")
+  points             Int      @default(0)
+  lifetimePurchase   Float    @default(0) @map("lifetime_purchase")
+  totalTransactions  Int      @default(0) @map("total_transactions")
+  lastTransactionAt  DateTime? @map("last_transaction_at")
+  notes              String?
+  isActive           Boolean  @default(true) @map("is_active")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+  deletedAt          DateTime? @map("deleted_at")
+
+  // Relations
+  tier               CustomerTier? @relation(fields: [tierId], references: [id])
+  sales              Sale[]
+  pointsHistory      CustomerPointsHistory[]
+
+  @@map("customers")
+}
+
+model CustomerTier {
+  id                 String   @id @default(uuid())
+  name               String   @unique
+  minLifetimePurchase Float    @map("min_lifetime_purchase")
+  discountPercent    Float    @map("discount_percent")
+  pointMultiplier    Float    @default(1) @map("point_multiplier")
+  benefits           String   // JSON string instead of array
+  color              String
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+  deletedAt          DateTime? @map("deleted_at")
+
+  // Relations
+  customers Customer[]
+
+  @@map("customer_tiers")
+}
+
+model CustomerPointsHistory {
+  id           String   @id @default(uuid())
+  customerId   String   @map("customer_id")
+  type         String
+  points       Int
+  referenceType String? @map("reference_type")
+  referenceId  String?  @map("reference_id")
+  description  String?
+  balanceAfter Int      @map("balance_after")
+  expiresAt    DateTime? @map("expires_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relations
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@map("customer_points_history")
+}
+
+// Inventory Management
+model StockMovement {
+  id         String   @id @default(uuid())
+  productId  String   @map("product_id")
+  batchId    String?  @map("batch_id")
+  outletId   String   @map("outlet_id")
+  type       String
+  qty        Int
+  qtyBefore  Int      @map("qty_before")
+  qtyAfter   Int      @map("qty_after")
+  refType    String   @map("ref_type")
+  refId      String?  @map("ref_id")
+  userId     String?  @map("user_id")
+  notes      String?
+  productName String? @map("product_name")
+  batchNo    String?  @map("batch_no")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  product Product @relation(fields: [productId], references: [id])
+  batch   Batch?  @relation(fields: [batchId], references: [id])
+  outlet  Outlet  @relation(fields: [outletId], references: [id])
+
+  @@map("stock_movements")
+}
+
+model Batch {
+  id           String    @id @default(uuid())
+  batchNo      String    @unique @map("batch_no")
+  productId    String    @map("product_id")
+  mfgDate      String?   @map("mfg_date")
+  expDate      String?   @map("exp_date")
+  qty          Int       @default(0)
+  costPrice    Float?    @map("cost_price")
+  receivedDate String?   @map("received_date")
+  notes        String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  product      Product         @relation(fields: [productId], references: [id])
+  movements    StockMovement[]
+  saleItems    SaleItem[]
+  adjustmentItems StockAdjustmentItem[]
+  opnameItems  StockOpnameItem[]
+  transferItems StockTransferItem[]
+  receiptItems GoodsReceiptItem[]
+
+  @@map("batches")
+}
+
+model StockAdjustment {
+  id            String    @id @default(uuid())
+  adjustmentNo  String    @unique @map("adjustment_no")
+  outletId      String    @map("outlet_id")
+  type          String    @default("IN")
+  reason        String?
+  status        String    @default("DRAFT")
+  totalItems    Int       @default(0) @map("total_items")
+  adjustedBy    String?   @map("adjusted_by")
+  approvedBy    String?   @map("approved_by")
+  approvedAt    DateTime? @map("approved_at")
+  notes         String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  outlet       Outlet          @relation(fields: [outletId], references: [id])
+  adjuster     User?           @relation("StockAdjuster", fields: [adjustedBy], references: [id])
+  approver     User?           @relation("StockApprover", fields: [approvedBy], references: [id])
+  items        StockAdjustmentItem[]
+
+  @@map("stock_adjustments")
+}
+
+model StockAdjustmentItem {
+  id           String   @id @default(uuid())
+  adjustmentId String   @map("adjustment_id")
+  productId    String   @map("product_id")
+  batchId      String?  @map("batch_id")
+  qty          Int
+  notes        String?
+  productName  String?  @map("product_name")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relations
+  adjustment StockAdjustment @relation(fields: [adjustmentId], references: [id], onDelete: Cascade)
+  product    Product         @relation(fields: [productId], references: [id])
+  batch      Batch?          @relation(fields: [batchId], references: [id])
+
+  @@map("stock_adjustment_items")
+}
+
+model StockOpname {
+  id          String    @id @default(uuid())
+  opnameNo    String    @unique @map("opname_no")
+  outletId    String    @map("outlet_id")
+  scheduledDate String  @map("scheduled_date")
+  status      String    @default("SCHEDULED")
+  totalItems  Int       @default(0) @map("total_items")
+  totalVariance Int     @default(0) @map("total_variance")
+  createdBy   String?   @map("created_by")
+  completedBy String?   @map("completed_by")
+  countedBy   String?   @map("counted_by")
+  completedAt DateTime? @map("completed_at")
+  notes       String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  outlet      Outlet     @relation(fields: [outletId], references: [id])
+  creator     User?      @relation("OpnameCreator", fields: [createdBy], references: [id])
+  completer   User?      @relation("OpnameCompleter", fields: [completedBy], references: [id])
+  counter     User?      @relation("OpnameCounter", fields: [countedBy], references: [id])
+  items       StockOpnameItem[]
+
+  @@map("stock_opnames")
+}
+
+model StockOpnameItem {
+  id           String    @id @default(uuid())
+  opnameId     String    @map("opname_id")
+  productId    String    @map("product_id")
+  batchId      String?   @map("batch_id")
+  systemQty    Int       @map("system_qty")
+  physicalQty  Int?      @map("physical_qty")
+  variance     Int       @default(0)
+  notes        String?
+  countedBy    String?   @map("counted_by")
+  countedAt    DateTime? @map("counted_at")
+  productName  String?   @map("product_name")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  opname   StockOpname @relation(fields: [opnameId], references: [id], onDelete: Cascade)
+  product  Product     @relation(fields: [productId], references: [id])
+  batch    Batch?      @relation(fields: [batchId], references: [id])
+
+  @@map("stock_opname_items")
+}
+
+model StockTransfer {
+  id           String    @id @default(uuid())
+  transferNo   String    @unique @map("transfer_no")
+  fromOutletId String    @map("from_outlet_id")
+  toOutletId   String    @map("to_outlet_id")
+  status       String    @default("DRAFT")
+  totalItems   Int       @default(0) @map("total_items")
+  requestedBy  String?   @map("requested_by")
+  approvedBy   String?   @map("approved_by")
+  sentBy       String?   @map("sent_by")
+  receivedBy   String?   @map("received_by")
+  requestedAt  DateTime? @map("requested_at")
+  approvedAt   DateTime? @map("approved_at")
+  sentAt       DateTime? @map("sent_at")
+  receivedAt   DateTime? @map("received_at")
+  notes        String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  fromOutlet   Outlet       @relation("TransferFrom", fields: [fromOutletId], references: [id])
+  toOutlet     Outlet       @relation("TransferTo", fields: [toOutletId], references: [id])
+  requester    User?        @relation("TransferCreator", fields: [requestedBy], references: [id])
+  approver     User?        @relation("TransferApprover", fields: [approvedBy], references: [id])
+  sender       User?        @relation("TransferSender", fields: [sentBy], references: [id])
+  receiver     User?        @relation("TransferReceiver", fields: [receivedBy], references: [id])
+  items        StockTransferItem[]
+
+  @@map("stock_transfers")
+}
+
+model StockTransferItem {
+  id             String   @id @default(uuid())
+  transferId     String   @map("transfer_id")
+  productId      String   @map("product_id")
+  batchId        String?  @map("batch_id")
+  qtyRequested   Int      @map("qty_requested")
+  qtySent        Int?     @map("qty_sent")
+  qtyReceived    Int?     @map("qty_received")
+  notes          String?
+  productName    String?  @map("product_name")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  transfer StockTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  product  Product       @relation(fields: [productId], references: [id])
+  batch    Batch?        @relation(fields: [batchId], references: [id])
+
+  @@map("stock_transfer_items")
+}
+
+// Suppliers & Purchasing
+model Supplier {
+  id             String   @id @default(uuid())
+  code           String   @unique
+  name           String
+  contactPerson  String?  @map("contact_person")
+  phone          String?
+  email          String?
+  address        String?
+  city           String?
+  taxId          String?  @map("tax_id")
+  paymentTerms   String?  @map("payment_terms")
+  creditLimit    Float?    @map("credit_limit")
+  bankName       String?  @map("bank_name")
+  bankAccountNo  String?  @map("bank_account_no")
+  bankAccountName String? @map("bank_account_name")
+  rating         Int?
+  notes          String?
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  // Relations
+  purchaseOrders PurchaseOrder[]
+  payments       SupplierPayment[]
+
+  @@map("suppliers")
+}
+
+model PurchaseOrder {
+  id            String    @id @default(uuid())
+  poNumber      String    @unique @map("po_number")
+  supplierId    String    @map("supplier_id")
+  outletId      String    @map("outlet_id")
+  status        String    @default("DRAFT")
+  subtotal      Float
+  discount      Float     @default(0)
+  tax           Float     @default(0)
+  grandTotal    Float     @map("grand_total")
+  paymentTerms  String?   @map("payment_terms")
+  expectedDate  String?   @map("expected_date")
+  notes         String?
+  orderedBy     String?   @map("ordered_by")
+  approvedBy    String?   @map("approved_by")
+  orderedAt     DateTime? @map("ordered_at")
+  approvedAt    DateTime? @map("approved_at")
+  sentAt        DateTime? @map("sent_at")
+  receivedAt    DateTime? @map("received_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  supplier      Supplier           @relation(fields: [supplierId], references: [id])
+  outlet        Outlet             @relation(fields: [outletId], references: [id])
+  orderer       User?              @relation("OrderCreator", fields: [orderedBy], references: [id])
+  approver      User?              @relation("OrderApprover", fields: [approvedBy], references: [id])
+  items         PurchaseOrderItem[]
+  goodsReceipts GoodsReceipt[]
+  payments      SupplierPayment[]
+
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id         String   @id @default(uuid())
+  poId       String   @map("po_id")
+  productId  String   @map("product_id")
+  qty        Int
+  uomId      String   @map("uom_id")
+  costPrice  Float    @map("cost_price")
+  discount   Float    @default(0)
+  tax        Float    @default(0)
+  subtotal   Float
+  notes      String?
+  productName String?  @map("product_name")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  order   PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Cascade)
+  product Product       @relation(fields: [productId], references: [id])
+  uom     UnitOfMeasure @relation(fields: [uomId], references: [id])
+  receiptItems GoodsReceiptItem[]
+
+  @@map("purchase_order_items")
+}
+
+model GoodsReceipt {
+  id          String    @id @default(uuid())
+  grnNumber   String    @unique @map("grn_number")
+  poId        String?   @map("po_id")
+  outletId    String    @map("outlet_id")
+  receivedBy  String    @map("received_by")
+  receivedAt  DateTime  @map("received_at")
+  notes       String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  order         PurchaseOrder?    @relation(fields: [poId], references: [id])
+  outlet        Outlet            @relation(fields: [outletId], references: [id])
+  receiver      User              @relation("GoodsReceiver", fields: [receivedBy], references: [id])
+  items         GoodsReceiptItem[]
+
+  @@map("goods_receipts")
+}
+
+model GoodsReceiptItem {
+  id           String   @id @default(uuid())
+  grnId        String   @map("grn_id")
+  poItemId     String?  @map("po_item_id")
+  productId    String   @map("product_id")
+  batchId      String?  @map("batch_id")
+  batchNo      String?  @map("batch_no")
+  mfgDate      String?  @map("mfg_date")
+  expDate      String?  @map("exp_date")
+  qtyOrdered   Int      @map("qty_ordered")
+  qtyReceived  Int      @map("qty_received")
+  qtyDamaged   Int      @default(0) @map("qty_damaged")
+  costPrice    Float?   @map("cost_price")
+  notes        String?
+  productName  String?  @map("product_name")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relations
+  receipt      GoodsReceipt       @relation(fields: [grnId], references: [id], onDelete: Cascade)
+  orderItem    PurchaseOrderItem? @relation(fields: [poItemId], references: [id])
+  product      Product           @relation(fields: [productId], references: [id])
+  batch        Batch?            @relation(fields: [batchId], references: [id])
+
+  @@map("goods_receipt_items")
+}
+
+model SupplierPayment {
+  id           String   @id @default(uuid())
+  paymentNo    String   @unique @map("payment_no")
+  supplierId   String   @map("supplier_id")
+  poId         String?  @map("po_id")
+  amount       Float
+  paymentMethod String  @map("payment_method")
+  referenceNo  String?  @map("reference_no")
+  paymentDate  String   @map("payment_date")
+  notes        String?
+  paidBy       String?  @map("paid_by")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  supplier     Supplier           @relation(fields: [supplierId], references: [id])
+  order        PurchaseOrder?     @relation(fields: [poId], references: [id])
+  payer        User?              @relation(fields: [paidBy], references: [id])
+
+  @@map("supplier_payments")
+}
