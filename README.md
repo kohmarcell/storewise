@@ -99,7 +99,7 @@ StoreWise is a comprehensive Point of Sale (POS) and Inventory Management System
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/storewise.git
+   git clone https://github.com/kohmarcell/storewise.git
    cd storewise
    ```
 

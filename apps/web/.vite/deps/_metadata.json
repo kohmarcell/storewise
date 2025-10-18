@@ -1,0 +1,70 @@
+{
+  "hash": "8b80a58a",
+  "configHash": "06391e06",
+  "lockfileHash": "e247ef09",
+  "browserHash": "9c60f957",
+  "optimized": {
+    "react/jsx-dev-runtime": {
+      "src": "../../../../node_modules/.pnpm/react@18.3.1/node_modules/react/jsx-dev-runtime.js",
+      "file": "react_jsx-dev-runtime.js",
+      "fileHash": "f5d700ae",
+      "needsInterop": true
+    },
+    "react": {
+      "src": "../../../../node_modules/.pnpm/react@18.3.1/node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "45753d9e",
+      "needsInterop": true
+    },
+    "@tanstack/react-router": {
+      "src": "../../../../node_modules/.pnpm/@tanstack+react-router@1.133.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/@tanstack/react-router/dist/esm/index.js",
+      "file": "@tanstack_react-router.js",
+      "fileHash": "a4940a3e",
+      "needsInterop": false
+    },
+    "lucide-react": {
+      "src": "../../../../node_modules/.pnpm/lucide-react@0.344.0_react@18.3.1/node_modules/lucide-react/dist/esm/lucide-react.js",
+      "file": "lucide-react.js",
+      "fileHash": "b5712abd",
+      "needsInterop": false
+    },
+    "date-fns": {
+      "src": "../../../../node_modules/.pnpm/date-fns@3.6.0/node_modules/date-fns/index.mjs",
+      "file": "date-fns.js",
+      "fileHash": "381cb81b",
+      "needsInterop": false
+    },
+    "react-dom/client": {
+      "src": "../../../../node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "4f22f8ea",
+      "needsInterop": true
+    },
+    "@tanstack/react-query": {
+      "src": "../../../../node_modules/.pnpm/@tanstack+react-query@5.90.5_react@18.3.1/node_modules/@tanstack/react-query/build/modern/index.js",
+      "file": "@tanstack_react-query.js",
+      "fileHash": "47b1c6c5",
+      "needsInterop": false
+    },
+    "sonner": {
+      "src": "../../../../node_modules/.pnpm/sonner@1.7.4_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/sonner/dist/index.mjs",
+      "file": "sonner.js",
+      "fileHash": "a4f4b0c7",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-3UOKMMKE": {
+      "file": "chunk-3UOKMMKE.js"
+    },
+    "chunk-BEAUA2DK": {
+      "file": "chunk-BEAUA2DK.js"
+    },
+    "chunk-7375RAIT": {
+      "file": "chunk-7375RAIT.js"
+    },
+    "chunk-WOOG5QLI": {
+      "file": "chunk-WOOG5QLI.js"
+    }
+  }
+}
