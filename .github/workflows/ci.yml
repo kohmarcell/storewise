@@ -227,7 +227,7 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Download build artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v5
         with:
           name: ${{ matrix.service }}-dist
           path: apps/${{ matrix.service }}/dist/
